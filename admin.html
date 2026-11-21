@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel | Rafi's Pure Foods</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #f4f7f2;
+      color: #26352a;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    header {
+      background: #174d32;
+      color: white;
+      padding: 22px;
+      border-radius: 14px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 7px;
+      font-size: 25px;
+    }
+
+    header p {
+      margin: 0;
+      color: #d7eadb;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 18px;
+      border-radius: 13px;
+      box-shadow: 0 3px 14px rgba(0,0,0,.06);
+    }
+
+    h2 {
+      color: #174d32;
+      font-size: 20px;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 13px 0 6px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #d5ded6;
+      border-radius: 8px;
+      font-size: 15px;
+      background: white;
+    }
+
+    textarea {
+      min-height: 85px;
+      resize: vertical;
+    }
+
+    button {
+      border: none;
+      padding: 11px 16px;
+      border-radius: 8px;
+      background: #17643d;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px 3px 5px 0;
+    }
+
+    button:hover {
+      opacity: .9;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .secondary {
+      background: #64746a;
+    }
+
+    .danger {
+      background: #c0392b;
+    }
+
+    .weight-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 7px;
+      margin: 10px 0;
+      align-items: center;
+    }
+
+    .weight-row button {
+      margin: 0;
+    }
+
+    .product-item, .admin-order {
+      border: 1px solid #e0e8e1;
+      padding: 14px;
+      border-radius: 10px;
+      margin: 12px 0;
+      overflow-wrap: anywhere;
+    }
+
+    .product-item h3, .admin-order h3 {
+      margin-top: 0;
+      color: #174d32;
+    }
+
+    #adminPanel {
+      display: none;
+    }
+
+    #loginArea {
+      display: block;
+      max-width: 480px;
+      margin: 30px auto;
+    }
+
+    .note {
+      font-size: 13px;
+      color: #65736a;
+      line-height: 1.6;
+    }
+
+    .section-gap {
+      margin-top: 25px;
+    }
+
+    @media(max-width: 500px) {
+      body {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+
+      .weight-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .weight-row button {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <header>
+    <h1>Rafi's Pure Foods</h1>
+    <p>Admin Management Panel</p>
+    <p>Pure • Natural • Authentic</p>
+  </header>
+
+  <!-- ADMIN LOGIN -->
+
+  <section id="loginArea" class="card">
+
+    <h2>অ্যাডমিন লগইন</h2>
+
+    <p class="note">
+      শুধুমাত্র অনুমোদিত অ্যাডমিন এখানে লগইন করতে পারবেন।
+    </p>
+
+    <form id="loginForm">
+
+      <label>অ্যাডমিন ইমেইল</label>
+      <input
+        type="email"
+        id="loginEmail"
+        placeholder="আপনার ইমেইল"
+        autocomplete="username"
+        required
+      >
+
+      <label>পাসওয়ার্ড</label>
+      <input
+        type="password"
+        id="loginPassword"
+        placeholder="আপনার পাসওয়ার্ড"
+        autocomplete="current-password"
+        required
+      >
+
+      <button type="submit" style="width:100%;margin-top:18px;">
+        লগইন করুন
+      </button>
+
+    </form>
+
+  </section>
+
+
+  <!-- ADMIN DASHBOARD -->
+
+  <main id="adminPanel">
+
+    <div class="card">
+      <h2>অ্যাডমিন ড্যাশবোর্ড</h2>
+      <p>Rafi's Pure Foods পরিচালনা প্যানেল</p>
+
+      <button type="button" id="logoutBtn" class="danger">
+        লগআউট
+      </button>
+    </div>
+
+
+    <!-- DELIVERY SETTINGS -->
+
+    <section class="card">
+
+      <h2>ডেলিভারি চার্জ সেটিংস</h2>
+
+      <form id="deliveryForm">
+
+        <label>ঢাকার মধ্যে ডেলিভারি চার্জ (টাকা)</label>
+        <input
+          type="number"
+          id="dhakaCharge"
+          min="0"
+          step="1"
+          required
+        >
+
+        <label>ঢাকার বাইরে ডেলিভারি চার্জ (টাকা)</label>
+        <input
+          type="number"
+          id="outsideCharge"
+          min="0"
+          step="1"
+          required
+        >
+
+        <button type="submit">
+          ডেলিভারি চার্জ সংরক্ষণ
+        </button>
+
+      </form>
+
+    </section>
+
+
+    <!-- PRODUCT MANAGEMENT -->
+
+    <section class="card">
+
+      <h2>নতুন পণ্য যোগ / পণ্য এডিট</h2>
+
+      <form id="productForm">
+
+        <input
+          type="hidden"
+          id="productId"
+          name="id"
+          value=""
+        >
+
+        <label>পণ্যের নাম</label>
+        <input
+          type="text"
+          name="name"
+          placeholder="পণ্যের নাম লিখুন"
+          required
+        >
+
+        <label>পণ্যের বিবরণ</label>
+        <textarea
+          name="description"
+          placeholder="পণ্যের বিবরণ লিখুন"
+        ></textarea>
+
+        <label>পণ্যের ছবির URL</label>
+        <input
+          type="url"
+          name="imageUrl"
+          placeholder="ছবির লিংক দিন"
+        >
+
+        <div class="section-gap">
+          <label>পণ্যের ওজন ও দাম</label>
+
+          <div id="weightRows"></div>
+
+          <button
+            type="button"
+            id="addWeightBtn"
+            class="secondary"
+          >
+            + নতুন ওজন যোগ করুন
+          </button>
+        </div>
+
+        <div style="margin-top:18px;">
+
+          <button type="submit">
+            পণ্য সংরক্ষণ করুন
+          </button>
+
+          <button
+            type="button"
+            id="cancelEditBtn"
+            class="secondary"
+          >
+            ফর্ম পরিষ্কার করুন
+          </button>
+
+        </div>
+
+      </form>
+
+    </section>
+
+
+    <!-- PRODUCT LIST -->
+
+    <section class="card">
+
+      <h2>সকল পণ্য পরিচালনা</h2>
+
+      <div id="adminProducts">
+        পণ্য লোড হচ্ছে...
+      </div>
+
+    </section>
+
+
+    <!-- ORDER MANAGEMENT -->
+
+    <section class="card">
+
+      <h2>কাস্টমারের অর্ডার</h2>
+
+      <p class="note">
+        এখানে কাস্টমারের নাম, মোবাইল নম্বর, ঠিকানা,
+        পণ্যের বিবরণ এবং মোট বিল দেখতে পারবেন।
+      </p>
+
+      <div id="ordersList">
+        অর্ডার লোড হচ্ছে...
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer style="text-align:center;padding:20px;color:#65736a;">
+    <p>© Rafi's Pure Foods</p>
+    <p>Admin Management System</p>
+  </footer>
+
+</div>
+
+
+<!-- FIREBASE SDK -->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+<!-- YOUR EXISTING JAVASCRIPT -->
+
+<script src="script.js"></script>
+
+</body>
+</html>
