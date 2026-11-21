@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="bn">
 <head>
@@ -5,17 +6,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rafi's Pure Foods</title>
 <link rel="stylesheet" href="style.css">
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
+
 <body>
 
 <header>
-<a class="logo" href="#">Rafi's <b>Pure Foods</b><small>PURE • NATURAL • AUTHENTIC</small></a>
+<a class="logo" href="#">
+Rafi's <b>Pure Foods</b>
+<small>PURE • NATURAL • AUTHENTIC</small>
+</a>
+
 <nav>
 <a href="#products">পণ্য</a>
-<button id="cartToggle">কার্ট (<span id="cartCount">0</span>)</button>
+<button id="cartToggle">
+কার্ট (<span id="cartCount">0</span>)
+</button>
 <button id="adminOpen">Admin</button>
 </nav>
 </header>
@@ -27,6 +36,7 @@
 <p>আপনার পরিবারের জন্য যত্নে বাছাই করা প্রাকৃতিক ও মানসম্মত পণ্য।</p>
 <a class="btn" href="#products">পণ্য দেখুন →</a>
 </div>
+
 <div class="honey">🍯<span>PURE HONEY</span></div>
 </section>
 
@@ -48,79 +58,217 @@
 <small>© <span id="year"></span> All rights reserved.</small>
 </footer>
 
+<!-- CART -->
 <div id="cart" class="panel">
 <button class="close" id="cartClose">×</button>
 <h2>আপনার কার্ট</h2>
 <div id="cartItems"></div>
-<h3>মোট: <span id="cartTotal">৳০</span></h3>
+<h3>পণ্যের মোট: <span id="cartTotal">৳০</span></h3>
 <button class="btn" id="checkoutBtn">অর্ডার করুন</button>
 </div>
 
+<!-- CHECKOUT -->
 <div id="checkout" class="modal">
 <div class="dialog">
+
 <button class="close" data-close="checkout">×</button>
 <h2>অর্ডারের তথ্য</h2>
+
 <form id="orderForm">
-<label>আপনার নাম<input name="name" required></label>
-<label>মোবাইল নম্বর<input name="phone" type="tel" required></label>
-<label>সম্পূর্ণ ঠিকানা<textarea name="address" required></textarea></label>
-<label>ডেলিভারি এলাকা
-<select name="deliveryZone" required>
+
+<label>
+আপনার নাম
+<input name="name" required>
+</label>
+
+<label>
+মোবাইল নম্বর
+<input name="phone" type="tel" required>
+</label>
+
+<label>
+সম্পূর্ণ ঠিকানা
+<textarea name="address" required></textarea>
+</label>
+
+<label>
+ডেলিভারি এলাকা
+<select name="deliveryZone" id="deliveryZone" required>
 <option value="">এলাকা নির্বাচন করুন</option>
 <option value="dhaka">ঢাকার মধ্যে</option>
 <option value="outside">ঢাকার বাইরে</option>
 </select>
 </label>
+
+<!-- BILL SUMMARY -->
+<div style="border:1px solid #ddd;padding:15px;border-radius:10px;margin:15px 0;">
+
+<h3>অর্ডারের হিসাব</h3>
+
+<p style="display:flex;justify-content:space-between;">
+<span>পণ্যের মোট দাম</span>
+<b id="checkoutSubtotal">৳০</b>
+</p>
+
+<p style="display:flex;justify-content:space-between;">
+<span>ডেলিভারি চার্জ</span>
+<b id="checkoutDelivery">এলাকা নির্বাচন করুন</b>
+</p>
+
+<hr>
+
+<p style="display:flex;justify-content:space-between;font-size:19px;">
+<strong>সর্বমোট বিল</strong>
+<strong id="checkoutGrandTotal">৳০</strong>
+</p>
+
+</div>
+
 <p>পেমেন্ট: <b>ক্যাশ অন ডেলিভারি</b></p>
-<button class="btn">অর্ডার নিশ্চিত করুন</button>
+
+<button type="submit" class="btn">
+অর্ডার নিশ্চিত করুন
+</button>
+
 </form>
+
 <p id="orderMsg"></p>
 </div>
 </div>
 
+<!-- ADMIN -->
 <div id="admin" class="modal">
 <div class="dialog">
+
 <button class="close" data-close="admin">×</button>
 <h2>Admin Panel</h2>
+
 <form id="loginForm">
-<label>ইমেইল<input name="email" type="email" required></label>
-<label>পাসওয়ার্ড<input name="password" type="password" required></label>
+<label>
+ইমেইল
+<input name="email" type="email" required>
+</label>
+
+<label>
+পাসওয়ার্ড
+<input name="password" type="password" required>
+</label>
+
 <button class="btn">লগইন</button>
 </form>
 
 <div id="adminPanel" hidden>
+
 <button id="logout">লগআউট</button>
+
 <h3>পণ্য যোগ / সম্পাদনা</h3>
+
 <form id="productForm">
 <input type="hidden" name="id">
-<label>পণ্যের নাম<input name="name" required></label>
-<label>বিবরণ<textarea name="description"></textarea></label>
-<label>ছবির URL<input name="imageUrl" type="url"></label>
-<label>১ কেজির দাম<input name="price_1kg" type="number" required></label>
-<label>৫০০ গ্রামের দাম<input name="price_500gm" type="number" required></label>
+
+<label>পণ্যের নাম
+<input name="name" required>
+</label>
+
+<label>বিবরণ
+<textarea name="description"></textarea>
+</label>
+
+<label>ছবির URL
+<input name="imageUrl" type="url">
+</label>
+
+<label>১ কেজির দাম
+<input name="price_1kg" type="number" required>
+</label>
+
+<label>৫০০ গ্রামের দাম
+<input name="price_500gm" type="number" required>
+</label>
+
 <button class="btn">পণ্য সংরক্ষণ</button>
 </form>
 
 <h3>ডেলিভারি চার্জ সেটিংস</h3>
+
 <form id="deliveryForm">
+
 <label>ঢাকার মধ্যে ডেলিভারি চার্জ
 <input name="dhakaCharge" type="number" value="70" min="0" required>
 </label>
+
 <label>ঢাকার বাইরে ডেলিভারি চার্জ
 <input name="outsideCharge" type="number" value="130" min="0" required>
 </label>
+
 <button type="submit">সংরক্ষণ</button>
 </form>
 
 <h3>অর্ডারসমূহ</h3>
 <div id="orders"></div>
+
 <h3>পণ্য তালিকা</h3>
 <div id="adminProducts"></div>
+
 </div>
+
 <p id="adminMsg"></p>
 </div>
 </div>
 
 <script src="script.js"></script>
+
+<!-- LIVE DELIVERY BILL CALCULATION -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+
+  const zone = document.getElementById("deliveryZone");
+
+  if (!zone) return;
+
+  function updateBill() {
+
+    const subtotal = cart.reduce(
+      (total, item) => total + item.price * item.qty,
+      0
+    );
+
+    let charge = 0;
+
+    if (zone.value === "dhaka") {
+      charge = Number(deliverySettings.dhakaCharge);
+    } else if (zone.value === "outside") {
+      charge = Number(deliverySettings.outsideCharge);
+    }
+
+    document.getElementById("checkoutSubtotal").textContent =
+      cash(subtotal);
+
+    document.getElementById("checkoutDelivery").textContent =
+      zone.value ? cash(charge) : "এলাকা নির্বাচন করুন";
+
+    document.getElementById("checkoutGrandTotal").textContent =
+      zone.value ? cash(subtotal + charge) : cash(subtotal);
+  }
+
+  zone.addEventListener("change", updateBill);
+
+  document.getElementById("checkoutBtn")
+    .addEventListener("click", function() {
+      setTimeout(updateBill, 100);
+    });
+
+  document.getElementById("cartToggle")
+    .addEventListener("click", updateBill);
+
+  document.getElementById("orderForm")
+    .addEventListener("change", updateBill);
+
+  document.getElementById("orderForm")
+    .addEventListener("input", updateBill);
+
+});
+</script>
+
 </body>
 </html>
