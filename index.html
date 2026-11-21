@@ -4,12 +4,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Rafi's Pure Foods | Pure • Natural • Authentic</title>
   <meta name="description" content="Rafi's Pure Foods - বিশুদ্ধ ও প্রাকৃতিক খাবারের বিশ্বস্ত ঠিকানা।">
+
   <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* CONTACT SECTION */
+    .contact-section {
+      padding: 40px 20px;
+      background: #f5faf5;
+      text-align: center;
+    }
+
+    .contact-section h2 {
+      margin-bottom: 10px;
+      color: #245b38;
+    }
+
+    .contact-subtitle {
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    .contact-card {
+      max-width: 520px;
+      margin: auto;
+      padding: 25px 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+      text-align: left;
+    }
+
+    .contact-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 13px 0;
+      border-bottom: 1px solid #eee;
+      line-height: 1.7;
+    }
+
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+
+    .contact-icon {
+      font-size: 23px;
+      min-width: 30px;
+    }
+
+    .contact-item strong {
+      display: block;
+      color: #245b38;
+      margin-bottom: 3px;
+    }
+
+    .contact-item a {
+      color: #333;
+      text-decoration: none;
+    }
+
+    .contact-btn {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      padding: 13px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: white;
+      background: #286b42;
+      font-weight: bold;
+    }
+
+    /* FLOATING WHATSAPP BUTTON */
+    .whatsapp-float {
+      position: fixed;
+      right: 20px;
+      bottom: 25px;
+      width: 60px;
+      height: 60px;
+      background: #25D366;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      z-index: 99999;
+      transition: 0.3s;
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+      background: #1ebe5d;
+    }
+
+    .whatsapp-float svg {
+      width: 34px;
+      height: 34px;
+      fill: white;
+    }
+  </style>
 </head>
+
 <body>
 
+<!-- HEADER -->
 <header class="site-header">
   <a href="#" class="brand">
     <span class="brand-name">Rafi's Pure Foods</span>
@@ -17,36 +121,56 @@
   </a>
 </header>
 
+<!-- HERO -->
 <section class="hero">
   <div class="hero-content">
     <span class="hero-label">PURE & NATURAL FOODS</span>
-    <h1>বিশুদ্ধ খাবার,<br><span>বিশ্বস্ততার সাথে</span></h1>
-    <p>আপনার পরিবারের জন্য বেছে নিন খাঁটি ও মানসম্মত প্রাকৃতিক খাবার।</p>
+
+    <h1>
+      বিশুদ্ধ খাবার,<br>
+      <span>বিশ্বস্ততার সাথে</span>
+    </h1>
+
+    <p>
+      আপনার পরিবারের জন্য বেছে নিন খাঁটি ও মানসম্মত প্রাকৃতিক খাবার।
+    </p>
+
     <a href="#products" class="hero-button">পণ্য দেখুন</a>
   </div>
+
   <div class="hero-art">
     <div class="hero-circle">🍯</div>
     <span>Pure & Natural</span>
   </div>
 </section>
 
+<!-- FEATURES -->
 <div class="features">
   <div>🌿 খাঁটি ও মানসম্মত পণ্য</div>
   <div>📦 সারা দেশে ডেলিভারি</div>
   <div>💵 ক্যাশ অন ডেলিভারি</div>
 </div>
 
+<!-- PRODUCTS -->
 <section class="products-section">
   <h2>আমাদের পণ্য</h2>
-  <p class="section-subtitle">আপনার পছন্দের প্রাকৃতিক খাবার বেছে নিন</p>
+  <p class="section-subtitle">
+    আপনার পছন্দের প্রাকৃতিক খাবার বেছে নিন
+  </p>
+
   <div id="products">পণ্য লোড হচ্ছে...</div>
 </section>
 
+<!-- CART -->
 <section class="cart-section">
   <h2>আপনার শপিং কার্ট</h2>
+
   <div id="cartItems">আপনার কার্ট খালি।</div>
 
-  <label for="cartDeliveryZone">ডেলিভারি এলাকা নির্বাচন করুন</label>
+  <label for="cartDeliveryZone">
+    ডেলিভারি এলাকা নির্বাচন করুন
+  </label>
+
   <select id="cartDeliveryZone">
     <option value="outside">ঢাকার বাইরে</option>
     <option value="dhaka">ঢাকার মধ্যে</option>
@@ -59,19 +183,41 @@
   </div>
 </section>
 
+<!-- ORDER -->
 <section>
   <h2>অর্ডার সম্পন্ন করুন</h2>
+
   <form id="orderForm">
+
     <label>আপনার নাম</label>
-    <input type="text" name="customerName" placeholder="আপনার নাম লিখুন" required>
+    <input
+      type="text"
+      name="customerName"
+      placeholder="আপনার নাম লিখুন"
+      required
+    >
 
     <label>মোবাইল নাম্বার</label>
-    <input type="tel" name="phone" placeholder="আপনার মোবাইল নাম্বার" required>
+    <input
+      type="tel"
+      name="phone"
+      placeholder="আপনার মোবাইল নাম্বার"
+      required
+    >
 
     <label>সম্পূর্ণ ঠিকানা</label>
-    <textarea name="address" placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন" required></textarea>
+    <textarea
+      name="address"
+      placeholder="আপনার সম্পূর্ণ ঠিকানা লিখুন"
+      required
+    ></textarea>
 
-    <input type="hidden" name="deliveryZone" id="orderDeliveryZone" value="outside">
+    <input
+      type="hidden"
+      name="deliveryZone"
+      id="orderDeliveryZone"
+      value="outside"
+    >
 
     <div class="total-box">
       <p>পণ্যের দাম: <strong id="orderSubtotal">৳০</strong></p>
@@ -80,19 +226,106 @@
     </div>
 
     <p><strong>পেমেন্ট পদ্ধতি: ক্যাশ অন ডেলিভারি</strong></p>
-    <button type="submit" id="orderButton">অর্ডার কনফার্ম করুন</button>
+
+    <button type="submit" id="orderButton">
+      অর্ডার কনফার্ম করুন
+    </button>
+
   </form>
 </section>
 
+<!-- CONTACT SECTION -->
+<section class="contact-section" id="contact">
+
+  <h2>যোগাযোগ করুন</h2>
+
+  <p class="contact-subtitle">
+    যেকোনো প্রয়োজনে আমাদের সঙ্গে যোগাযোগ করুন।
+  </p>
+
+  <div class="contact-card">
+
+    <div class="contact-item">
+      <span class="contact-icon">🏪</span>
+      <div>
+        <strong>প্রতিষ্ঠানের নাম</strong>
+        Rafi's Pure Foods
+      </div>
+    </div>
+
+    <div class="contact-item">
+      <span class="contact-icon">📞</span>
+      <div>
+        <strong>মোবাইল নম্বর</strong>
+        <a href="tel:+8801815284198">01815284198</a>
+      </div>
+    </div>
+
+    <div class="contact-item">
+      <span class="contact-icon">💬</span>
+      <div>
+        <strong>WhatsApp</strong>
+        <a
+          href="https://wa.me/8801815284198"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          01815284198
+        </a>
+      </div>
+    </div>
+
+    <div class="contact-item">
+      <span class="contact-icon">📍</span>
+      <div>
+        <strong>আমাদের ঠিকানা</strong>
+
+        <p>1. Shibganj Bazar, Shibganj Chapainawabganj</p>
+
+        <p>2. Hajimor, Shibganj, Chapainawabganj</p>
+      </div>
+    </div>
+
+    <a
+      href="https://wa.me/8801815284198"
+      class="contact-btn"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      💬 WhatsApp-এ যোগাযোগ করুন
+    </a>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
 <footer>
   <h3>Rafi's Pure Foods</h3>
   <p>Pure • Natural • Authentic</p>
   <p>বিশুদ্ধ খাবার, বিশ্বস্ততার সাথে।</p>
+  <p>© Rafi's Pure Foods. All Rights Reserved.</p>
 </footer>
 
+<!-- FLOATING WHATSAPP -->
+<a
+  href="https://wa.me/8801815284198?text=Assalamu%20Alaikum%2C%20Rafi's%20Pure%20Foods%20থেকে%20যোগাযোগ%20করছি।"
+  class="whatsapp-float"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="WhatsApp এ যোগাযোগ করুন"
+  title="WhatsApp এ যোগাযোগ করুন"
+>
+  <svg viewBox="0 0 32 32" aria-hidden="true">
+    <path d="M16 .5C7.45.5.5 7.45.5 16c0 2.73.71 5.41 2.06 7.77L.5 31.5l7.95-2.02A15.4 15.4 0 0 0 16 31.5c8.55 0 15.5-6.95 15.5-15.5S24.55.5 16 .5zm0 28.35c-2.4 0-4.75-.65-6.79-1.89l-.49-.29-4.72 1.2 1.22-4.6-.32-.51A12.78 12.78 0 1 1 16 28.85zm7.02-9.58c-.38-.19-2.22-1.1-2.57-1.23-.34-.13-.59-.19-.84.19-.25.38-.97 1.23-1.19 1.48-.22.25-.44.28-.81.09-.38-.19-1.59-.59-3.03-1.87-1.12-1-1.88-2.24-2.1-2.62-.22-.38-.02-.58.17-.77.17-.17.38-.44.56-.66.19-.22.25-.38.38-.63.12-.25.06-.47-.03-.66-.1-.19-.84-2.03-1.16-2.78-.3-.72-.61-.62-.84-.63h-.72c-.25 0-.66.09-1 .47-.34.38-1.31 1.29-1.31 3.13s1.34 3.63 1.53 3.88c.19.25 2.63 4.02 6.38 5.63.89.38 1.59.61 2.13.78.89.28 1.7.24 2.34.14.71-.1 2.22-.91 2.53-1.78.31-.88.31-1.63.22-1.78-.09-.16-.34-.25-.72-.44z"/>
+  </svg>
+</a>
+
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- MAIN JAVASCRIPT -->
 <script src="script.js"></script>
 
 </body>
