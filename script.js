@@ -1,7 +1,6 @@
-// Rafi's Pure Foods - script.js
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBPxXJbVAQ5TxPO49gRoTQ8s2yGbX1paKc",
+  apiKey: "AIzaSyBPXJbVAQ5TxPO49gRoTQ8s2yGbX1paKc",
   authDomain: "rafi-s-pure.firebaseapp.com",
   projectId: "rafi-s-pure",
   storageBucket: "rafi-s-pure.firebasestorage.app",
@@ -10,311 +9,626 @@ const firebaseConfig = {
   measurementId: "G-R67LVKLZJM"
 };
 
-let db, auth, user = null;
-let items = [], cart = [];
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+let user = null;
+let items = [];
+let cart = [];
+
 let deliverySettings = {
   dhakaCharge: 70,
   outsideCharge: 130
 };
 
 const $ = id => document.getElementById(id);
-const cash = n => "৳" + Number(n || 0).toLocaleString("bn-BD");
 
-function modal(id, on = true) {
-  $(id).classList.toggle("open", on);
+const cash = amount =>
+  "৳" + Number(amount || 0).toLocaleString("en-BD");
+
+function getWeights(product) {
+  if (
+    Array.isArray(product.weights) &&
+    product.weights.length &&
+    typeof product.weights[0] === "object"
+  ) {
+    return product.weights;
+  }
+
+  const oldWeights = [];
+
+  if (product.price_500gm != null) {
+    oldWeights.push({
+      weight: "৫০০ গ্রাম",
+      price: Number(product.price_500gm)
+    });
+  }
+
+  if (product.price_1kg != null) {
+    oldWeights.push({
+      weight: "১ কেজি",
+      price: Number(product.price_1kg)
+    });
+  }
+
+  return oldWeights;
 }
 
-function start() {
-  $("year").textContent = new Date().getFullYear();
+// পণ্য লোড
+async function loadProducts() {
+  try {
+    const snapshot = await db.collection("products").get();
 
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  auth = firebase.auth();
+    items = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-  db.collection("products").onSnapshot(s => {
-    items = s.docs.map(d => ({ id: d.id, ...d.data() }));
     render();
-    if (user) adminProducts();
-  });
-
-  db.collection("settings").doc("general").onSnapshot(s => {
-    if (s.exists) {
-      const data = s.data();
-      deliverySettings.dhakaCharge =
-        Number(data.dhakaCharge ?? 70);
-      deliverySettings.outsideCharge =
-        Number(data.outsideCharge ?? 130);
-    }
-  });
-
-  auth.onAuthStateChanged(u => {
-    user = u;
-    $("loginForm").hidden = !!u;
-    $("adminPanel").hidden = !u;
-
-    if (u) {
-      loadOrders();
-      adminProducts();
-    }
-  });
+    adminProducts();
+  } catch (error) {
+    console.error(error);
+    alert("পণ্য লোড করা যায়নি।");
+  }
 }
 
+// পণ্য দেখানো
 function render() {
-  $("productGrid").innerHTML = items.map(p => `
-    <article class="product">
-      <img src="${p.imageUrl || ""}"
-           onerror="this.style.display='none'">
-      <h3>${p.name || ""}</h3>
-      <p>${p.description || ""}</p>
+  const container =
+    $("products") || $("productList") || $("productGrid");
 
-      <select id="w-${p.id}">
-        <option value="500gm">
-          ৫০০ গ্রাম — ${cash(p.price_500gm)}
-        </option>
-        <option value="1kg">
-          ১ কেজি — ${cash(p.price_1kg)}
-        </option>
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  items.forEach(product => {
+    const weights = getWeights(product);
+
+    const options = weights.map((item, index) => `
+      <option value="${index}">
+        ${item.weight} - ${cash(item.price)}
+      </option>
+    `).join("");
+
+    const card = document.createElement("div");
+    card.className = "product-card";
+
+    card.innerHTML = `
+      <img
+        src="${product.imageUrl || ""}"
+        alt="${product.name || "পণ্য"}"
+        onerror="this.style.display='none'"
+      >
+
+      <h3>${product.name || ""}</h3>
+
+      <p>${product.description || ""}</p>
+
+      <select id="w-${product.id}">
+        ${options}
       </select>
 
-      <button class="btn" onclick="add('${p.id}')">
+      <button onclick="add('${product.id}')">
         কার্টে যোগ করুন
       </button>
-    </article>
-  `).join("") || "এখনো পণ্য যোগ করা হয়নি।";
-}
+    `;
 
-function add(id) {
-  let p = items.find(x => x.id === id);
-  let w = $("w-" + id).value;
-  let price = Number(w === "1kg" ? p.price_1kg : p.price_500gm);
-
-  let x = cart.find(x => x.id === id && x.w === w);
-
-  if (x) x.qty++;
-  else cart.push({
-    id,
-    name: p.name,
-    w,
-    price,
-    qty: 1
+    container.appendChild(card);
   });
-
-  cartRender();
 }
 
-function cartRender() {
-  $("cartCount").textContent =
-    cart.reduce((a, x) => a + x.qty, 0);
+// কার্টে পণ্য যোগ
+function add(id) {
+  const product = items.find(item => item.id === id);
 
-  $("cartItems").innerHTML = cart.map((x, i) => `
-    <div class="cartrow">
-      ${x.name} — ${x.w} × ${x.qty}
-      <b>${cash(x.price * x.qty)}</b>
-      <button onclick="cart.splice(${i},1);cartRender()">
-        বাদ
-      </button>
-    </div>
-  `).join("");
+  if (!product) return;
 
-  $("cartTotal").textContent =
-    cash(cart.reduce((a, x) => a + x.price * x.qty, 0));
-}
+  const weights = getWeights(product);
+  const select = $("w-" + id);
 
-$("cartToggle").onclick = () =>
-  $("cart").classList.add("open");
+  if (!weights.length || !select) {
+    alert("এই পণ্যের ওজন ও দাম যোগ করা হয়নি।");
+    return;
+  }
 
-$("cartClose").onclick = () =>
-  $("cart").classList.remove("open");
+  const selected = weights[Number(select.value)];
 
-$("adminOpen").onclick = () =>
-  modal("admin");
+  if (!selected) return;
 
-document.querySelectorAll("[data-close]").forEach(b => {
-  b.onclick = () => modal(b.dataset.close, false);
-});
-
-$("checkoutBtn").onclick = () => {
-  if (!cart.length) return alert("কার্ট খালি");
-  $("cart").classList.remove("open");
-  modal("checkout");
-};
-
-$("orderForm").onsubmit = async e => {
-  e.preventDefault();
-
-  let f = new FormData(e.target);
-  let sub = cart.reduce((a, x) => a + x.price * x.qty, 0);
-
-  let zone = f.get("deliveryZone");
-  let charge = Number(
-    zone === "dhaka"
-      ? deliverySettings.dhakaCharge
-      : deliverySettings.outsideCharge
+  const existing = cart.find(item =>
+    item.id === id && item.w === selected.weight
   );
 
+  if (existing) {
+    existing.qty++;
+  } else {
+    cart.push({
+      id: id,
+      name: product.name,
+      w: selected.weight,
+      price: Number(selected.price),
+      qty: 1
+    });
+  }
+
+  renderCart();
+}
+
+// কার্ট দেখানো
+function renderCart() {
+  const container = $("cartItems") || $("cart");
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  cart.forEach((item, index) => {
+    const row = document.createElement("div");
+
+    row.innerHTML = `
+      <p>
+        ${item.name} (${item.w})
+        × ${item.qty}
+        = ${cash(item.price * item.qty)}
+        <button onclick="changeQty(${index}, -1)">−</button>
+        <button onclick="changeQty(${index}, 1)">+</button>
+        <button onclick="removeCart(${index})">বাদ</button>
+      </p>
+    `;
+
+    container.appendChild(row);
+  });
+
+  updateTotal();
+}
+
+// পরিমাণ পরিবর্তন
+function changeQty(index, amount) {
+  if (!cart[index]) return;
+
+  cart[index].qty += amount;
+
+  if (cart[index].qty <= 0) {
+    cart.splice(index, 1);
+  }
+
+  renderCart();
+}
+
+// কার্ট থেকে বাদ
+function removeCart(index) {
+  cart.splice(index, 1);
+  renderCart();
+}
+
+// মোট হিসাব
+function updateTotal() {
+  const subtotal = cart.reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0
+  );
+
+  const zone =
+    document.querySelector('[name="deliveryZone"]')?.value || "outside";
+
+  const delivery =
+    zone === "dhaka"
+      ? Number(deliverySettings.dhakaCharge)
+      : Number(deliverySettings.outsideCharge);
+
+  const total = subtotal + (cart.length ? delivery : 0);
+
+  if ($("subtotal")) $("subtotal").textContent = cash(subtotal);
+  if ($("deliveryFee")) $("deliveryFee").textContent = cash(cart.length ? delivery : 0);
+  if ($("total")) $("total").textContent = cash(total);
+  if ($("grandTotal")) $("grandTotal").textContent = cash(total);
+}
+
+// ডেলিভারি এলাকা পরিবর্তন
+document.addEventListener("change", event => {
+  if (event.target.name === "deliveryZone") {
+    updateTotal();
+  }
+});
+
+// ডেলিভারি চার্জ লোড
+async function loadDeliverySettings() {
   try {
-    let r = await db.collection("orders").add({
-      customerName: f.get("name"),
-      phone: f.get("phone"),
-      address: f.get("address"),
+    const doc = await db.collection("settings").doc("delivery").get();
+
+    if (doc.exists) {
+      deliverySettings = {
+        ...deliverySettings,
+        ...doc.data()
+      };
+    }
+
+    if ($("dhakaCharge")) {
+      $("dhakaCharge").value = deliverySettings.dhakaCharge;
+    }
+
+    if ($("outsideCharge")) {
+      $("outsideCharge").value = deliverySettings.outsideCharge;
+    }
+
+    updateTotal();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// ডেলিভারি চার্জ সংরক্ষণ
+if ($("deliveryForm")) {
+  $("deliveryForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const dhakaCharge = Number($("dhakaCharge").value);
+    const outsideCharge = Number($("outsideCharge").value);
+
+    try {
+      await db.collection("settings").doc("delivery").set({
+        dhakaCharge,
+        outsideCharge
+      });
+
+      deliverySettings = { dhakaCharge, outsideCharge };
+
+      updateTotal();
+
+      alert("ডেলিভারি চার্জ সংরক্ষণ হয়েছে।");
+    } catch (error) {
+      alert("সংরক্ষণ করা যায়নি: " + error.message);
+    }
+  });
+}
+
+// নতুন ওজনের ঘর যোগ
+function addWeightRow(weight = "", price = "") {
+  const container = $("weightRows");
+
+  if (!container) return;
+
+  const row = document.createElement("div");
+  row.className = "weight-row";
+
+  const weightInput = document.createElement("input");
+  weightInput.name = "weight[]";
+  weightInput.placeholder = "ওজন, যেমন ২৫০ গ্রাম";
+  weightInput.required = true;
+  weightInput.value = weight;
+
+  const priceInput = document.createElement("input");
+  priceInput.name = "price[]";
+  priceInput.type = "number";
+  priceInput.placeholder = "দাম (টাকা)";
+  priceInput.min = "0";
+  priceInput.required = true;
+  priceInput.value = price;
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.textContent = "বাদ";
+  removeButton.onclick = () => row.remove();
+
+  row.append(weightInput, priceInput, removeButton);
+  container.appendChild(row);
+}
+
+// আরও ওজন যোগ বাটন
+if ($("addWeightBtn")) {
+  $("addWeightBtn").addEventListener("click", () => {
+    addWeightRow();
+  });
+}
+
+// পণ্য সংরক্ষণ
+if ($("productForm")) {
+  $("productForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!user) {
+      alert("আগে অ্যাডমিন হিসেবে লগইন করুন।");
+      return;
+    }
+
+    const form = event.target;
+    const data = new FormData(form);
+
+    const name = data.get("name").trim();
+    const description = data.get("description") || "";
+    const imageUrl = data.get("imageUrl") || "";
+    const id = data.get("id");
+
+    const weightNames = data.getAll("weight[]");
+    const prices = data.getAll("price[]");
+
+    const weights = weightNames.map((weight, index) => ({
+      weight: weight.trim(),
+      price: Number(prices[index])
+    })).filter(item => item.weight && Number.isFinite(item.price) && item.price >= 0);
+
+    if (!weights.length) {
+      alert("কমপক্ষে একটি ওজন ও দাম যোগ করুন।");
+      return;
+    }
+
+    const productData = {
+      name,
+      description,
+      imageUrl,
+      weights,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try {
+      if (id) {
+        await db.collection("products").doc(id).update(productData);
+        alert("পণ্য আপডেট হয়েছে।");
+      } else {
+        productData.createdAt =
+          firebase.firestore.FieldValue.serverTimestamp();
+
+        await db.collection("products").add(productData);
+        alert("নতুন পণ্য যোগ হয়েছে।");
+      }
+
+      form.reset();
+
+      if ($("weightRows")) {
+        $("weightRows").innerHTML = "";
+        addWeightRow();
+      }
+
+      await loadProducts();
+    } catch (error) {
+      alert("পণ্য সংরক্ষণ করা যায়নি: " + error.message);
+    }
+  });
+}
+
+// পণ্য এডিট
+function editP(id) {
+  const product = items.find(item => item.id === id);
+
+  if (!product) return;
+
+  const form = $("productForm");
+  if (!form) return;
+
+  form.elements.id.value = product.id;
+  form.elements.name.value = product.name || "";
+  form.elements.description.value = product.description || "";
+  form.elements.imageUrl.value = product.imageUrl || "";
+
+  $("weightRows").innerHTML = "";
+
+  const weights = getWeights(product);
+
+  if (weights.length) {
+    weights.forEach(item => {
+      addWeightRow(item.weight, item.price);
+    });
+  } else {
+    addWeightRow();
+  }
+
+  form.scrollIntoView({ behavior: "smooth" });
+}
+
+// অ্যাডমিন পণ্যের তালিকা
+function adminProducts() {
+  const container = $("adminProducts");
+
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  items.forEach(product => {
+    const weights = getWeights(product);
+
+    const priceText = weights.map(item =>
+      `${item.weight}: ${cash(item.price)}`
+    ).join(" / ");
+
+    const row = document.createElement("div");
+
+    row.innerHTML = `
+      <h3>${product.name || ""}</h3>
+      <p>${priceText}</p>
+      <button onclick="editP('${product.id}')">এডিট</button>
+      <button onclick="deleteP('${product.id}')">ডিলিট</button>
+    `;
+
+    container.appendChild(row);
+  });
+}
+
+// পণ্য ডিলিট
+async function deleteP(id) {
+  if (!user) {
+    alert("আগে অ্যাডমিন হিসেবে লগইন করুন।");
+    return;
+  }
+
+  if (!confirm("এই পণ্যটি ডিলিট করতে চান?")) return;
+
+  try {
+    await db.collection("products").doc(id).delete();
+    await loadProducts();
+    alert("পণ্য ডিলিট হয়েছে।");
+  } catch (error) {
+    alert("ডিলিট করা যায়নি: " + error.message);
+  }
+}
+
+// অর্ডার জমা
+if ($("orderForm")) {
+  $("orderForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    if (!cart.length) {
+      alert("আপনার কার্ট খালি।");
+      return;
+    }
+
+    const form = event.target;
+    const data = new FormData(form);
+
+    const subtotal = cart.reduce(
+      (sum, item) => sum + item.price * item.qty,
+      0
+    );
+
+    const zone = data.get("deliveryZone");
+
+    const deliveryCharge =
+      zone === "dhaka"
+        ? Number(deliverySettings.dhakaCharge)
+        : Number(deliverySettings.outsideCharge);
+
+    const order = {
+      customerName: data.get("customerName") || "",
+      phone: data.get("phone") || "",
+      address: data.get("address") || "",
       deliveryZone: zone,
-      deliveryCharge: charge,
-      items: cart,
-      subtotal: sub,
-      total: sub + charge,
+      items: cart.map(item => ({ ...item })),
+      subtotal,
+      deliveryCharge,
+      total: subtotal + deliveryCharge,
       paymentMethod: "Cash on Delivery",
       status: "নতুন অর্ডার",
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    };
 
-    $("orderMsg").textContent =
-      "অর্ডার গ্রহণ করা হয়েছে। অর্ডার আইডি: " + r.id;
+    try {
+      await db.collection("orders").add(order);
 
-    cart = [];
-    cartRender();
-    e.target.reset();
+      alert("আপনার অর্ডার সফলভাবে গ্রহণ করা হয়েছে।");
 
-  } catch (err) {
-    $("orderMsg").textContent = err.message;
-  }
-};
-
-$("loginForm").onsubmit = async e => {
-  e.preventDefault();
-
-  let f = new FormData(e.target);
-
-  try {
-    await auth.signInWithEmailAndPassword(
-      f.get("email"),
-      f.get("password")
-    );
-
-    $("adminMsg").textContent = "লগইন সফল";
-
-  } catch (x) {
-    $("adminMsg").textContent = x.message;
-  }
-};
-
-$("logout").onclick = () => auth.signOut();
-
-$("productForm").onsubmit = async e => {
-  e.preventDefault();
-
-  let f = new FormData(e.target);
-
-  let data = {
-    name: f.get("name"),
-    description: f.get("description"),
-    imageUrl: f.get("imageUrl"),
-    price_1kg: Number(f.get("price_1kg")),
-    price_500gm: Number(f.get("price_500gm")),
-    weights: ["500gm", "1kg"]
-  };
-
-  try {
-    let id = f.get("id");
-
-    if (id) {
-      await db.collection("products").doc(id).update(data);
-    } else {
-      await db.collection("products").add(data);
+      cart = [];
+      renderCart();
+      form.reset();
+      updateTotal();
+    } catch (error) {
+      alert("অর্ডার করা যায়নি: " + error.message);
     }
-
-    e.target.reset();
-    $("adminMsg").textContent = "পণ্য সংরক্ষণ হয়েছে";
-
-  } catch (x) {
-    $("adminMsg").textContent = x.message;
-  }
-};
-
-$("deliveryForm").onsubmit = async e => {
-  e.preventDefault();
-
-  let f = new FormData(e.target);
-
-  try {
-    await db.collection("settings").doc("general").set({
-      dhakaCharge: Number(f.get("dhakaCharge")),
-      outsideCharge: Number(f.get("outsideCharge"))
-    }, { merge: true });
-
-    $("adminMsg").textContent =
-      "ডেলিভারি চার্জ সংরক্ষণ হয়েছে";
-
-  } catch (x) {
-    $("adminMsg").textContent = x.message;
-  }
-};
-
-function adminProducts() {
-  $("adminProducts").innerHTML = items.map(p => `
-    <div class="adminrow">
-      ${p.name} —
-      ${cash(p.price_500gm)} / ${cash(p.price_1kg)}
-
-      <button onclick="editP('${p.id}')">Edit</button>
-      <button onclick="delP('${p.id}')">Delete</button>
-    </div>
-  `).join("");
-}
-
-function editP(id) {
-  let p = items.find(x => x.id === id);
-  let f = $("productForm");
-
-  f.elements.id.value = id;
-  f.elements.name.value = p.name || "";
-  f.elements.description.value = p.description || "";
-  f.elements.imageUrl.value = p.imageUrl || "";
-  f.elements.price_1kg.value = p.price_1kg || 0;
-  f.elements.price_500gm.value = p.price_500gm || 0;
-}
-
-async function delP(id) {
-  if (confirm("পণ্য মুছবেন?")) {
-    await db.collection("products").doc(id).delete();
-  }
-}
-
-function loadOrders() {
-  db.collection("orders")
-    .orderBy("createdAt", "desc")
-    .limit(50)
-    .onSnapshot(s => {
-      $("orders").innerHTML = s.docs.map(d => {
-        let o = d.data();
-
-        return `
-          <div class="adminrow">
-            <b>${o.customerName}</b> ${o.phone}<br>
-            ${o.address}<br>
-            ${(o.items || []).map(x =>
-              x.name + " " + x.w + " × " + x.qty
-            ).join(", ")}<br>
-
-            ডেলিভারি চার্জ: ${cash(o.deliveryCharge)}<br>
-            <b>${cash(o.total)}</b> · COD · ${o.status}<br>
-
-            <button onclick="status('${d.id}','প্রসেসিং')">
-              প্রসেসিং
-            </button>
-
-            <button onclick="status('${d.id}','ডেলিভারি সম্পন্ন')">
-              সম্পন্ন
-            </button>
-          </div>
-        `;
-      }).join("") || "অর্ডার নেই";
-    });
-}
-
-async function status(id, s) {
-  await db.collection("orders").doc(id).update({
-    status: s
   });
 }
 
-start();
+// অ্যাডমিন অর্ডার দেখানো
+async function loadOrders() {
+  const container = $("ordersList") || $("adminOrders");
+
+  if (!container) return;
+
+  try {
+    const snapshot = await db.collection("orders")
+      .orderBy("createdAt", "desc")
+      .get();
+
+    container.innerHTML = "";
+
+    snapshot.forEach(doc => {
+      const order = doc.data();
+
+      const productText = (order.items || []).map(item =>
+        `${item.name} (${item.w}) × ${item.qty}`
+      ).join(", ");
+
+      const row = document.createElement("div");
+
+      row.innerHTML = `
+        <h3>অর্ডার: ${doc.id}</h3>
+        <p>নাম: ${order.customerName || ""}</p>
+        <p>মোবাইল: ${order.phone || ""}</p>
+        <p>ঠিকানা: ${order.address || ""}</p>
+        <p>পণ্য: ${productText}</p>
+        <p>পণ্যের দাম: ${cash(order.subtotal)}</p>
+        <p>ডেলিভারি চার্জ: ${cash(order.deliveryCharge)}</p>
+        <p>মোট বিল: ${cash(order.total)}</p>
+        <p>পেমেন্ট: ক্যাশ অন ডেলিভারি</p>
+        <p>অবস্থা: ${order.status || "নতুন অর্ডার"}</p>
+        <button onclick="updateOrderStatus('${doc.id}', 'প্রসেসিং')">
+          প্রসেসিং
+        </button>
+        <button onclick="updateOrderStatus('${doc.id}', 'ডেলিভারি সম্পন্ন')">
+          ডেলিভারি সম্পন্ন
+        </button>
+      `;
+
+      container.appendChild(row);
+    });
+  } catch (error) {
+    console.error(error);
+    alert("অর্ডার লোড করা যায়নি: " + error.message);
+  }
+}
+
+// অর্ডারের অবস্থা পরিবর্তন
+async function updateOrderStatus(id, status) {
+  if (!user) {
+    alert("আগে অ্যাডমিন হিসেবে লগইন করুন।");
+    return;
+  }
+
+  try {
+    await db.collection("orders").doc(id).update({ status });
+    await loadOrders();
+    alert("অর্ডারের অবস্থা আপডেট হয়েছে।");
+  } catch (error) {
+    alert("আপডেট করা যায়নি: " + error.message);
+  }
+}
+
+// অ্যাডমিন লগইন
+if ($("loginForm")) {
+  $("loginForm").addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const email = $("loginEmail")?.value;
+    const password = $("loginPassword")?.value;
+
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+      alert("লগইন সফল হয়েছে।");
+    } catch (error) {
+      alert("লগইন হয়নি: " + error.message);
+    }
+  });
+}
+
+// লগআউট
+function logout() {
+  auth.signOut();
+}
+
+// লগইন অবস্থা
+auth.onAuthStateChanged(async currentUser => {
+  user = currentUser;
+
+  const adminPanel = $("adminPanel");
+  const loginArea = $("loginArea");
+
+  if (adminPanel) {
+    adminPanel.style.display = user ? "block" : "none";
+  }
+
+  if (loginArea) {
+    loginArea.style.display = user ? "none" : "block";
+  }
+
+  if (user) {
+    await loadProducts();
+    await loadOrders();
+  }
+});
+
+// পেজ চালু হলে
+loadProducts();
+loadDeliverySettings();
+
+if ($("weightRows") && !$("weightRows").children.length) {
+  addWeightRow();
+}
