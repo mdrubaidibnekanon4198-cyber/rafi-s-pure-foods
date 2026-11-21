@@ -1,11 +1,126 @@
 <!doctype html>
-<html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rafi's Pure Foods</title><link rel="stylesheet" href="style.css"><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script></head>
-<body><header><a class="logo" href="#">Rafi's <b>Pure Foods</b><small>PURE • NATURAL • AUTHENTIC</small></a><nav><a href="#products">পণ্য</a><button id="cartToggle">কার্ট (<span id="cartCount">0</span>)</button><button id="adminOpen">Admin</button></nav></header>
-<section class="hero"><div><small>PURE • NATURAL • AUTHENTIC</small><h1>বিশুদ্ধ খাবারের<br><em>বিশ্বাসের ঠিকানা</em></h1><p>আপনার পরিবারের জন্য যত্নে বাছাই করা প্রাকৃতিক ও মানসম্মত পণ্য।</p><a class="btn" href="#products">পণ্য দেখুন →</a></div><div class="honey">🍯<span>PURE HONEY</span></div></section>
-<section class="features"><span>🌿 যত্নে বাছাই করা পণ্য</span><span>📦 সারা বাংলাদেশে ডেলিভারি</span><span>💵 ক্যাশ অন ডেলিভারি</span></section>
-<main id="products"><small>OUR COLLECTION</small><h2>আমাদের পণ্য</h2><div id="productGrid">পণ্য লোড হচ্ছে...</div></main>
-<footer><h2>Rafi's Pure Foods</h2><p>Pure • Natural • Authentic</p><small>© <span id="year"></span> All rights reserved.</small></footer>
-<div id="cart" class="panel"><button class="close" id="cartClose">×</button><h2>আপনার কার্ট</h2><div id="cartItems"></div><h3>মোট: <span id="cartTotal">৳০</span></h3><button class="btn" id="checkoutBtn">অর্ডার করুন</button></div>
-<div id="checkout" class="modal"><div class="dialog"><button class="close" data-close="checkout">×</button><h2>অর্ডারের তথ্য</h2><form id="orderForm"><label>নাম<input name="name" required></label><label>মোবাইল<input name="phone" required></label><label>ঠিকানা<textarea name="address" required></textarea></label><p>পেমেন্ট: <b>ক্যাশ অন ডেলিভারি</b></p><button class="btn">অর্ডার নিশ্চিত করুন</button></form><p id="orderMsg"></p></div></div>
-<div id="admin" class="modal"><div class="dialog"><button class="close" data-close="admin">×</button><h2>Admin Panel</h2><form id="loginForm"><label>ইমেইল<input name="email" type="email" required></label><label>পাসওয়ার্ড<input name="password" type="password" required></label><button class="btn">লগইন</button></form><div id="adminPanel" hidden><button id="logout">লগআউট</button><h3>পণ্য যোগ / সম্পাদনা</h3><form id="productForm"><input type="hidden" name="id"><label>পণ্যের নাম<input name="name" required></label><label>বিবরণ<textarea name="description"></textarea></label><label>ছবির URL<input name="imageUrl" type="url"></label><label>১ কেজির দাম<input name="price_1kg" type="number" required></label><label>৫০০ গ্রামের দাম<input name="price_500gm" type="number" required></label><button class="btn">পণ্য সংরক্ষণ</button></form><h3>ডেলিভারি চার্জ</h3><form id="deliveryForm"><input name="charge" type="number" placeholder="ডেলিভারি চার্জ" required><button>সংরক্ষণ</button></form><h3>অর্ডারসমূহ</h3><div id="orders"></div><h3>পণ্য তালিকা</h3><div id="adminProducts"></div></div><p id="adminMsg"></p></div></div>
-<script src="script.js"></script></body></html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rafi's Pure Foods</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<header>
+<a class="logo" href="#">Rafi's <b>Pure Foods</b><small>PURE • NATURAL • AUTHENTIC</small></a>
+<nav>
+<a href="#products">পণ্য</a>
+<button id="cartToggle">কার্ট (<span id="cartCount">0</span>)</button>
+<button id="adminOpen">Admin</button>
+</nav>
+</header>
+
+<section class="hero">
+<div>
+<small>PURE • NATURAL • AUTHENTIC</small>
+<h1>বিশুদ্ধ খাবারের<br><em>বিশ্বাসের ঠিকানা</em></h1>
+<p>আপনার পরিবারের জন্য যত্নে বাছাই করা প্রাকৃতিক ও মানসম্মত পণ্য।</p>
+<a class="btn" href="#products">পণ্য দেখুন →</a>
+</div>
+<div class="honey">🍯<span>PURE HONEY</span></div>
+</section>
+
+<section class="features">
+<span>🌿 যত্নে বাছাই করা পণ্য</span>
+<span>📦 সারা বাংলাদেশে ডেলিভারি</span>
+<span>💵 ক্যাশ অন ডেলিভারি</span>
+</section>
+
+<main id="products">
+<small>OUR COLLECTION</small>
+<h2>আমাদের পণ্য</h2>
+<div id="productGrid">পণ্য লোড হচ্ছে...</div>
+</main>
+
+<footer>
+<h2>Rafi's Pure Foods</h2>
+<p>Pure • Natural • Authentic</p>
+<small>© <span id="year"></span> All rights reserved.</small>
+</footer>
+
+<div id="cart" class="panel">
+<button class="close" id="cartClose">×</button>
+<h2>আপনার কার্ট</h2>
+<div id="cartItems"></div>
+<h3>মোট: <span id="cartTotal">৳০</span></h3>
+<button class="btn" id="checkoutBtn">অর্ডার করুন</button>
+</div>
+
+<div id="checkout" class="modal">
+<div class="dialog">
+<button class="close" data-close="checkout">×</button>
+<h2>অর্ডারের তথ্য</h2>
+<form id="orderForm">
+<label>আপনার নাম<input name="name" required></label>
+<label>মোবাইল নম্বর<input name="phone" type="tel" required></label>
+<label>সম্পূর্ণ ঠিকানা<textarea name="address" required></textarea></label>
+<label>ডেলিভারি এলাকা
+<select name="deliveryZone" required>
+<option value="">এলাকা নির্বাচন করুন</option>
+<option value="dhaka">ঢাকার মধ্যে</option>
+<option value="outside">ঢাকার বাইরে</option>
+</select>
+</label>
+<p>পেমেন্ট: <b>ক্যাশ অন ডেলিভারি</b></p>
+<button class="btn">অর্ডার নিশ্চিত করুন</button>
+</form>
+<p id="orderMsg"></p>
+</div>
+</div>
+
+<div id="admin" class="modal">
+<div class="dialog">
+<button class="close" data-close="admin">×</button>
+<h2>Admin Panel</h2>
+<form id="loginForm">
+<label>ইমেইল<input name="email" type="email" required></label>
+<label>পাসওয়ার্ড<input name="password" type="password" required></label>
+<button class="btn">লগইন</button>
+</form>
+
+<div id="adminPanel" hidden>
+<button id="logout">লগআউট</button>
+<h3>পণ্য যোগ / সম্পাদনা</h3>
+<form id="productForm">
+<input type="hidden" name="id">
+<label>পণ্যের নাম<input name="name" required></label>
+<label>বিবরণ<textarea name="description"></textarea></label>
+<label>ছবির URL<input name="imageUrl" type="url"></label>
+<label>১ কেজির দাম<input name="price_1kg" type="number" required></label>
+<label>৫০০ গ্রামের দাম<input name="price_500gm" type="number" required></label>
+<button class="btn">পণ্য সংরক্ষণ</button>
+</form>
+
+<h3>ডেলিভারি চার্জ সেটিংস</h3>
+<form id="deliveryForm">
+<label>ঢাকার মধ্যে ডেলিভারি চার্জ
+<input name="dhakaCharge" type="number" value="70" min="0" required>
+</label>
+<label>ঢাকার বাইরে ডেলিভারি চার্জ
+<input name="outsideCharge" type="number" value="130" min="0" required>
+</label>
+<button type="submit">সংরক্ষণ</button>
+</form>
+
+<h3>অর্ডারসমূহ</h3>
+<div id="orders"></div>
+<h3>পণ্য তালিকা</h3>
+<div id="adminProducts"></div>
+</div>
+<p id="adminMsg"></p>
+</div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
