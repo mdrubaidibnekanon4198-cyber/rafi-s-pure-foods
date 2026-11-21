@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rafi's Pure Foods | Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="brand">
+    <span class="brand-name">Rafi's Pure Foods</span>
+    <span class="tagline">ADMINISTRATION PANEL</span>
+  </a>
+</header>
+
+<main style="max-width:900px;margin:30px auto;padding:15px;">
+
+  <section id="loginArea">
+    <h2>অ্যাডমিন লগইন</h2>
+    <p>শুধুমাত্র অনুমোদিত অ্যাডমিন প্রবেশ করতে পারবেন।</p>
+
+    <form id="loginForm">
+      <label>অ্যাডমিন ইমেইল</label>
+      <input type="email" id="loginEmail"
+        placeholder="আপনার ইমেইল লিখুন" required>
+
+      <label>পাসওয়ার্ড</label>
+      <input type="password" id="loginPassword"
+        placeholder="আপনার পাসওয়ার্ড লিখুন" required>
+
+      <button type="submit">লগইন করুন</button>
+    </form>
+
+    <p id="loginMessage"></p>
+  </section>
+
+  <section id="adminPanel" style="display:none;">
+
+    <h2>অ্যাডমিন ড্যাশবোর্ড</h2>
+    <p>স্বাগতম, Rafi's Pure Foods Admin</p>
+
+    <button type="button" id="logoutBtn">লগআউট</button>
+
+    <hr>
+
+    <h3>নতুন পণ্য যোগ / পণ্য এডিট</h3>
+
+    <form id="productForm">
+      <input type="hidden" name="id">
+
+      <label>পণ্যের নাম</label>
+      <input type="text" name="name"
+        placeholder="পণ্যের নাম লিখুন" required>
+
+      <label>পণ্যের বিবরণ</label>
+      <textarea name="description"
+        placeholder="পণ্যের বিস্তারিত বিবরণ লিখুন"></textarea>
+
+      <label>পণ্যের ছবির URL</label>
+      <input type="url" name="imageUrl"
+        placeholder="ছবির লিংক দিন">
+
+      <h3>ওজন ও দাম</h3>
+      <div id="weightRows"></div>
+
+      <button type="button" id="addWeightBtn">
+        + আরও ওজন ও দাম যোগ করুন
+      </button>
+
+      <br><br>
+      <button type="submit">পণ্য সংরক্ষণ করুন</button>
+      <button type="button" id="cancelEditBtn">এডিট বাতিল</button>
+    </form>
+
+    <hr>
+
+    <h3>আমার পণ্যসমূহ</h3>
+    <div id="adminProducts">লোড হচ্ছে...</div>
+
+    <hr>
+
+    <h3>ডেলিভারি চার্জ সেটিংস</h3>
+
+    <form id="deliveryForm">
+      <label>ঢাকার মধ্যে ডেলিভারি চার্জ (টাকা)</label>
+      <input type="number" id="dhakaCharge" min="0" required>
+
+      <label>ঢাকার বাইরে ডেলিভারি চার্জ (টাকা)</label>
+      <input type="number" id="outsideCharge" min="0" required>
+
+      <button type="submit">চার্জ সংরক্ষণ করুন</button>
+    </form>
+
+    <hr>
+
+    <h3>কাস্টমার অর্ডারসমূহ</h3>
+    <div id="ordersList">অর্ডার লোড হচ্ছে...</div>
+
+  </section>
+</main>
+
+<footer>
+  <h3>Rafi's Pure Foods</h3>
+  <p>Pure • Natural • Authentic</p>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
