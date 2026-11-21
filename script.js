@@ -1,4 +1,3 @@
-
 const firebaseConfig = {
   apiKey: "AIzaSyBPXJbVAQ5TxPO49gRoTQ8s2yGbX1paKc",
   authDomain: "rafi-s-pure.firebaseapp.com",
@@ -631,4 +630,4 @@ loadDeliverySettings();
 
 if ($("weightRows") && !$("weightRows").children.length) {
   addWeightRow();
-}
+  }
