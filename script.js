@@ -1,8 +1,7 @@
 
-
 /* =====================================
    RAFI'S PURE FOODS
-   COMPLETE FIREBASE JAVASCRIPT
+   CUSTOMER + ADMIN JAVASCRIPT
 ===================================== */
 
 // FIREBASE CONFIG
@@ -16,6 +15,9 @@ const firebaseConfig = {
   measurementId: "G-R67LVKLZJM"
 };
 
+// ADMIN EMAIL
+const ADMIN_EMAIL = "mdrubaidibnekanon4198@gmail.com";
+
 // FIREBASE INITIALIZE
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
@@ -24,8 +26,14 @@ if (!firebase.apps.length) {
 const db = firebase.firestore();
 const auth = firebase.auth();
 
-// GLOBAL VARIABLES
+const $ = id => document.getElementById(id);
+
+const isAdminPage = window.location.pathname
+  .toLowerCase()
+  .endsWith("/admin.html");
+
 let user = null;
+let isAdmin = false;
 let items = [];
 let cart = [];
 
@@ -33,8 +41,6 @@ let deliverySettings = {
   dhakaCharge: 70,
   outsideCharge: 130
 };
-
-const $ = id => document.getElementById(id);
 
 const cash = amount =>
   "৳" + Number(amount || 0).toLocaleString("en-BD");
@@ -76,13 +82,7 @@ function getWeights(product) {
 // =====================================
 
 async function loadProducts() {
-  const container = $("products");
-
   try {
-    if (container) {
-      container.textContent = "পণ্য লোড হচ্ছে...";
-    }
-
     const snapshot = await db.collection("products").get();
 
     items = snapshot.docs.map(doc => ({
@@ -96,20 +96,24 @@ async function loadProducts() {
   } catch (error) {
     console.error("PRODUCT ERROR:", error);
 
-    if (container) {
-      container.textContent =
+    if ($("products")) {
+      $("products").textContent =
+        "পণ্য লোড করা যায়নি: " + error.message;
+    }
+
+    if ($("adminProducts")) {
+      $("adminProducts").textContent =
         "পণ্য লোড করা যায়নি: " + error.message;
     }
   }
 }
 
 // =====================================
-// DISPLAY PRODUCTS
+// DISPLAY CUSTOMER PRODUCTS
 // =====================================
 
 function render() {
   const container = $("products");
-
   if (!container) return;
 
   container.innerHTML = "";
@@ -125,13 +129,13 @@ function render() {
     const card = document.createElement("div");
     card.className = "product-card";
 
-    const image = document.createElement("img");
-    image.src = product.imageUrl || "";
-    image.alt = product.name || "পণ্য";
-
-    image.onerror = () => {
-      image.style.display = "none";
-    };
+    if (product.imageUrl) {
+      const image = document.createElement("img");
+      image.src = product.imageUrl;
+      image.alt = product.name || "পণ্য";
+      image.onerror = () => image.style.display = "none";
+      card.appendChild(image);
+    }
 
     const title = document.createElement("h3");
     title.textContent = product.name || "";
@@ -147,23 +151,16 @@ function render() {
       option.value = index;
       option.textContent =
         item.weight + " - " + cash(item.price);
-
       select.appendChild(option);
     });
 
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = "কার্টে যোগ করুন";
+    button.disabled = !weights.length;
     button.onclick = () => add(product.id);
 
-    card.append(
-      image,
-      title,
-      description,
-      select,
-      button
-    );
-
+    card.append(title, description, select, button);
     container.appendChild(card);
   });
 }
@@ -174,7 +171,6 @@ function render() {
 
 function add(id) {
   const product = items.find(item => item.id === id);
-
   if (!product) return;
 
   const weights = getWeights(product);
@@ -186,7 +182,6 @@ function add(id) {
   }
 
   const selected = weights[Number(select.value)];
-
   if (!selected) return;
 
   const existing = cart.find(item =>
@@ -214,7 +209,6 @@ function add(id) {
 
 function renderCart() {
   const container = $("cartItems");
-
   if (!container) return;
 
   container.innerHTML = "";
@@ -231,18 +225,18 @@ function renderCart() {
       `${item.name} (${item.w}) × ${item.qty} = ${cash(item.price * item.qty)}`;
 
     const minus = document.createElement("button");
-    minus.textContent = "−";
     minus.type = "button";
+    minus.textContent = "−";
     minus.onclick = () => changeQty(index, -1);
 
     const plus = document.createElement("button");
-    plus.textContent = "+";
     plus.type = "button";
+    plus.textContent = "+";
     plus.onclick = () => changeQty(index, 1);
 
     const remove = document.createElement("button");
-    remove.textContent = "বাদ";
     remove.type = "button";
+    remove.textContent = "বাদ";
     remove.onclick = () => removeCart(index);
 
     row.append(info, minus, plus, remove);
@@ -253,7 +247,7 @@ function renderCart() {
 }
 
 // =====================================
-// CHANGE QUANTITY
+// QUANTITY
 // =====================================
 
 function changeQty(index, amount) {
@@ -285,10 +279,9 @@ function updateTotal() {
 
   const zone = $("cartDeliveryZone")?.value || "outside";
 
-  const delivery =
-    zone === "dhaka"
-      ? Number(deliverySettings.dhakaCharge)
-      : Number(deliverySettings.outsideCharge);
+  const delivery = zone === "dhaka"
+    ? Number(deliverySettings.dhakaCharge)
+    : Number(deliverySettings.outsideCharge);
 
   const actualDelivery = cart.length ? delivery : 0;
   const total = subtotal + actualDelivery;
@@ -329,7 +322,7 @@ document.addEventListener("change", event => {
 });
 
 // =====================================
-// DELIVERY SETTINGS
+// LOAD DELIVERY SETTINGS
 // =====================================
 
 async function loadDeliverySettings() {
@@ -361,6 +354,19 @@ async function loadDeliverySettings() {
 }
 
 // =====================================
+// ADMIN AUTH CHECK
+// =====================================
+
+function requireAdmin() {
+  if (!user || !isAdmin) {
+    alert("এই কাজের জন্য অ্যাডমিন অনুমতি প্রয়োজন।");
+    return false;
+  }
+
+  return true;
+}
+
+// =====================================
 // SAVE DELIVERY SETTINGS
 // =====================================
 
@@ -368,27 +374,25 @@ if ($("deliveryForm")) {
   $("deliveryForm").addEventListener("submit", async event => {
     event.preventDefault();
 
-    if (!user) {
-      alert("আগে অ্যাডমিন লগইন করুন।");
-      return;
-    }
+    if (!requireAdmin()) return;
 
     const dhakaCharge = Number($("dhakaCharge").value);
     const outsideCharge = Number($("outsideCharge").value);
 
+    if (
+      !Number.isFinite(dhakaCharge) || dhakaCharge < 0 ||
+      !Number.isFinite(outsideCharge) || outsideCharge < 0
+    ) {
+      alert("সঠিক ডেলিভারি চার্জ লিখুন।");
+      return;
+    }
+
     try {
       await db.collection("settings")
         .doc("delivery")
-        .set({
-          dhakaCharge,
-          outsideCharge
-        });
+        .set({ dhakaCharge, outsideCharge });
 
-      deliverySettings = {
-        dhakaCharge,
-        outsideCharge
-      };
-
+      deliverySettings = { dhakaCharge, outsideCharge };
       updateTotal();
 
       alert("ডেলিভারি চার্জ সংরক্ষণ হয়েছে।");
@@ -405,7 +409,6 @@ if ($("deliveryForm")) {
 
 function addWeightRow(weight = "", price = "") {
   const container = $("weightRows");
-
   if (!container) return;
 
   const row = document.createElement("div");
@@ -441,6 +444,23 @@ if ($("addWeightBtn")) {
 }
 
 // =====================================
+// RESET PRODUCT FORM
+// =====================================
+
+function resetProductForm() {
+  if (!$("productForm")) return;
+
+  $("productForm").reset();
+  $("productForm").elements.id.value = "";
+  $("weightRows").innerHTML = "";
+  addWeightRow();
+}
+
+if ($("cancelEditBtn")) {
+  $("cancelEditBtn").addEventListener("click", resetProductForm);
+}
+
+// =====================================
 // SAVE PRODUCT
 // =====================================
 
@@ -448,10 +468,7 @@ if ($("productForm")) {
   $("productForm").addEventListener("submit", async event => {
     event.preventDefault();
 
-    if (!user) {
-      alert("আগে অ্যাডমিন লগইন করুন।");
-      return;
-    }
+    if (!requireAdmin()) return;
 
     const form = event.target;
     const data = new FormData(form);
@@ -465,7 +482,7 @@ if ($("productForm")) {
     const prices = data.getAll("price[]");
 
     const weights = names.map((weight, index) => ({
-      weight: weight.trim(),
+      weight: String(weight).trim(),
       price: Number(prices[index])
     })).filter(item =>
       item.weight &&
@@ -473,8 +490,8 @@ if ($("productForm")) {
       item.price >= 0
     );
 
-    if (!weights.length) {
-      alert("কমপক্ষে একটি ওজন ও দাম যোগ করুন।");
+    if (!name || !weights.length) {
+      alert("পণ্যের নাম এবং কমপক্ষে একটি ওজন ও দাম দিন।");
       return;
     }
 
@@ -498,10 +515,7 @@ if ($("productForm")) {
         alert("নতুন পণ্য যোগ হয়েছে।");
       }
 
-      form.reset();
-      $("weightRows").innerHTML = "";
-      addWeightRow();
-
+      resetProductForm();
       await loadProducts();
 
     } catch (error) {
@@ -515,8 +529,9 @@ if ($("productForm")) {
 // =====================================
 
 function editP(id) {
-  const product = items.find(item => item.id === id);
+  if (!requireAdmin()) return;
 
+  const product = items.find(item => item.id === id);
   if (!product) return;
 
   const form = $("productForm");
@@ -542,15 +557,19 @@ function editP(id) {
 }
 
 // =====================================
-// ADMIN PRODUCTS
+// ADMIN PRODUCT LIST
 // =====================================
 
 function adminProducts() {
   const container = $("adminProducts");
-
-  if (!container) return;
+  if (!container || !isAdmin) return;
 
   container.innerHTML = "";
+
+  if (!items.length) {
+    container.textContent = "এখনো কোনো পণ্য যোগ করা হয়নি।";
+    return;
+  }
 
   items.forEach(product => {
     const row = document.createElement("div");
@@ -564,10 +583,12 @@ function adminProducts() {
       .join(" / ");
 
     const edit = document.createElement("button");
+    edit.type = "button";
     edit.textContent = "এডিট";
     edit.onclick = () => editP(product.id);
 
     const remove = document.createElement("button");
+    remove.type = "button";
     remove.textContent = "ডিলিট";
     remove.onclick = () => deleteP(product.id);
 
@@ -581,10 +602,7 @@ function adminProducts() {
 // =====================================
 
 async function deleteP(id) {
-  if (!user) {
-    alert("আগে অ্যাডমিন লগইন করুন।");
-    return;
-  }
+  if (!requireAdmin()) return;
 
   if (!confirm("পণ্যটি ডিলিট করতে চান?")) return;
 
@@ -612,6 +630,8 @@ if ($("orderForm")) {
     }
 
     const form = event.target;
+    const button = $("orderButton");
+
     const data = new FormData(form);
 
     const subtotal = cart.reduce(
@@ -621,15 +641,14 @@ if ($("orderForm")) {
 
     const zone = $("cartDeliveryZone")?.value || "outside";
 
-    const deliveryCharge =
-      zone === "dhaka"
-        ? Number(deliverySettings.dhakaCharge)
-        : Number(deliverySettings.outsideCharge);
+    const deliveryCharge = zone === "dhaka"
+      ? Number(deliverySettings.dhakaCharge)
+      : Number(deliverySettings.outsideCharge);
 
     const order = {
-      customerName: data.get("customerName") || "",
-      phone: data.get("phone") || "",
-      address: data.get("address") || "",
+      customerName: String(data.get("customerName") || "").trim(),
+      phone: String(data.get("phone") || "").trim(),
+      address: String(data.get("address") || "").trim(),
       deliveryZone: zone,
       items: cart.map(item => ({ ...item })),
       subtotal,
@@ -640,7 +659,17 @@ if ($("orderForm")) {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
+    if (!order.customerName || !order.phone || !order.address) {
+      alert("সব তথ্য সঠিকভাবে পূরণ করুন।");
+      return;
+    }
+
     try {
+      if (button) {
+        button.disabled = true;
+        button.textContent = "অর্ডার পাঠানো হচ্ছে...";
+      }
+
       await db.collection("orders").add(order);
 
       alert("আপনার অর্ডার সফলভাবে গ্রহণ করা হয়েছে!");
@@ -657,6 +686,12 @@ if ($("orderForm")) {
 
     } catch (error) {
       alert("অর্ডার করা যায়নি: " + error.message);
+
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = "অর্ডার কনফার্ম করুন";
+      }
     }
   });
 }
@@ -668,7 +703,7 @@ if ($("orderForm")) {
 async function loadOrders() {
   const container = $("ordersList");
 
-  if (!container) return;
+  if (!container || !requireAdmin()) return;
 
   try {
     const snapshot = await db.collection("orders")
@@ -677,10 +712,16 @@ async function loadOrders() {
 
     container.innerHTML = "";
 
+    if (snapshot.empty) {
+      container.textContent = "এখনো কোনো অর্ডার আসেনি।";
+      return;
+    }
+
     snapshot.forEach(doc => {
       const order = doc.data();
 
       const row = document.createElement("div");
+      row.className = "admin-order";
 
       const title = document.createElement("h3");
       title.textContent = "অর্ডার: " + doc.id;
@@ -717,7 +758,8 @@ async function loadOrders() {
 
   } catch (error) {
     console.error("ORDER ERROR:", error);
-    container.textContent = "অর্ডার লোড করা যায়নি: " + error.message;
+    container.textContent =
+      "অর্ডার লোড করা যায়নি: " + error.message;
   }
 }
 
@@ -726,16 +768,11 @@ async function loadOrders() {
 // =====================================
 
 async function updateOrderStatus(id, status) {
-  if (!user) {
-    alert("আগে অ্যাডমিন লগইন করুন।");
-    return;
-  }
+  if (!requireAdmin()) return;
 
   try {
     await db.collection("orders").doc(id).update({ status });
-
     await loadOrders();
-
     alert("অর্ডারের অবস্থা আপডেট হয়েছে।");
 
   } catch (error) {
@@ -751,10 +788,14 @@ if ($("loginForm")) {
   $("loginForm").addEventListener("submit", async event => {
     event.preventDefault();
 
-    const email = $("loginEmail").value.trim();
+    const email = $("loginEmail").value.trim().toLowerCase();
     const password = $("loginPassword").value;
-
     const button = $("loginForm").querySelector('button[type="submit"]');
+
+    if (email !== ADMIN_EMAIL) {
+      alert("এই ইমেইলটি অ্যাডমিন হিসেবে অনুমোদিত নয়।");
+      return;
+    }
 
     if (button) {
       button.disabled = true;
@@ -763,7 +804,6 @@ if ($("loginForm")) {
 
     try {
       await auth.signInWithEmailAndPassword(email, password);
-      alert("অ্যাডমিন লগইন সফল হয়েছে!");
 
     } catch (error) {
       console.error("LOGIN ERROR:", error);
@@ -772,7 +812,7 @@ if ($("loginForm")) {
     } finally {
       if (button) {
         button.disabled = false;
-        button.textContent = "লগইন";
+        button.textContent = "লগইন করুন";
       }
     }
   });
@@ -782,13 +822,17 @@ if ($("loginForm")) {
 // LOGOUT
 // =====================================
 
-async function logout() {
-  try {
-    await auth.signOut();
-    alert("লগআউট সফল হয়েছে।");
-  } catch (error) {
-    alert("লগআউট সমস্যা: " + error.message);
-  }
+if ($("logoutBtn")) {
+  $("logoutBtn").addEventListener("click", async () => {
+    try {
+      await auth.signOut();
+      alert("লগআউট সফল হয়েছে।");
+      window.location.reload();
+
+    } catch (error) {
+      alert("লগআউট সমস্যা: " + error.message);
+    }
+  });
 }
 
 // =====================================
@@ -798,19 +842,50 @@ async function logout() {
 auth.onAuthStateChanged(async currentUser => {
   user = currentUser;
 
-  if ($("adminPanel")) {
-    $("adminPanel").style.display =
-      user ? "block" : "none";
-  }
+  if (!isAdminPage) return;
 
-  if ($("loginArea")) {
-    $("loginArea").style.display =
-      user ? "none" : "block";
-  }
+  if (currentUser) {
+    const email = (currentUser.email || "").toLowerCase();
 
-  if (user) {
-    await loadProducts();
-    await loadOrders();
+    if (email !== ADMIN_EMAIL) {
+      isAdmin = false;
+
+      alert("এই অ্যাকাউন্টের অ্যাডমিন অনুমতি নেই।");
+
+      await auth.signOut();
+      return;
+    }
+
+    isAdmin = true;
+
+    if ($("loginArea")) {
+      $("loginArea").style.display = "none";
+    }
+
+    if ($("adminPanel")) {
+      $("adminPanel").style.display = "block";
+    }
+
+    await Promise.all([
+      loadProducts(),
+      loadDeliverySettings(),
+      loadOrders()
+    ]);
+
+    if ($("weightRows") && !$("weightRows").children.length) {
+      addWeightRow();
+    }
+
+  } else {
+    isAdmin = false;
+
+    if ($("adminPanel")) {
+      $("adminPanel").style.display = "none";
+    }
+
+    if ($("loginArea")) {
+      $("loginArea").style.display = "block";
+    }
   }
 });
 
@@ -824,11 +899,9 @@ async function startWebsite() {
     loadDeliverySettings()
   ]);
 
-  if ($("weightRows") && !$("weightRows").children.length) {
-    addWeightRow();
-  }
-
   renderCart();
 }
 
-startWebsite();
+if (!isAdminPage) {
+  startWebsite();
+}
