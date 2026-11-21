@@ -1,5 +1,6 @@
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBPXJbVAQ5TxPO49gRoTQ8s2yGbX1paKc",
+  apiKey: "AIzaSyBPxXJbVAQ5TxPO49gRoTQ8s2yGbX1paKc",
   authDomain: "rafi-s-pure.firebaseapp.com",
   projectId: "rafi-s-pure",
   storageBucket: "rafi-s-pure.firebasestorage.app",
@@ -27,6 +28,7 @@ const $ = id => document.getElementById(id);
 const cash = amount =>
   "৳" + Number(amount || 0).toLocaleString("en-BD");
 
+// পণ্যের ওজন ও দাম বের করা
 function getWeights(product) {
   if (
     Array.isArray(product.weights) &&
@@ -67,6 +69,7 @@ async function loadProducts() {
 
     render();
     adminProducts();
+
   } catch (error) {
     console.error(error);
     alert("পণ্য লোড করা যায়নি।");
@@ -163,6 +166,10 @@ function renderCart() {
 
   container.innerHTML = "";
 
+  if (!cart.length) {
+    container.textContent = "আপনার কার্ট খালি।";
+  }
+
   cart.forEach((item, index) => {
     const row = document.createElement("div");
 
@@ -171,6 +178,7 @@ function renderCart() {
         ${item.name} (${item.w})
         × ${item.qty}
         = ${cash(item.price * item.qty)}
+
         <button onclick="changeQty(${index}, -1)">−</button>
         <button onclick="changeQty(${index}, 1)">+</button>
         <button onclick="removeCart(${index})">বাদ</button>
@@ -202,7 +210,7 @@ function removeCart(index) {
   renderCart();
 }
 
-// মোট হিসাব
+// মোট বিল হিসাব
 function updateTotal() {
   const subtotal = cart.reduce(
     (sum, item) => sum + item.price * item.qty,
@@ -217,12 +225,34 @@ function updateTotal() {
       ? Number(deliverySettings.dhakaCharge)
       : Number(deliverySettings.outsideCharge);
 
-  const total = subtotal + (cart.length ? delivery : 0);
+  const actualDelivery = cart.length ? delivery : 0;
+  const total = subtotal + actualDelivery;
 
-  if ($("subtotal")) $("subtotal").textContent = cash(subtotal);
-  if ($("deliveryFee")) $("deliveryFee").textContent = cash(cart.length ? delivery : 0);
-  if ($("total")) $("total").textContent = cash(total);
-  if ($("grandTotal")) $("grandTotal").textContent = cash(total);
+  // কার্টের হিসাব
+  if ($("subtotal")) {
+    $("subtotal").textContent = cash(subtotal);
+  }
+
+  if ($("deliveryFee")) {
+    $("deliveryFee").textContent = cash(actualDelivery);
+  }
+
+  if ($("total")) {
+    $("total").textContent = cash(total);
+  }
+
+  // অর্ডার ফর্মের হিসাব
+  if ($("orderSubtotal")) {
+    $("orderSubtotal").textContent = cash(subtotal);
+  }
+
+  if ($("orderDeliveryFee")) {
+    $("orderDeliveryFee").textContent = cash(actualDelivery);
+  }
+
+  if ($("grandTotal")) {
+    $("grandTotal").textContent = cash(total);
+  }
 }
 
 // ডেলিভারি এলাকা পরিবর্তন
@@ -235,7 +265,9 @@ document.addEventListener("change", event => {
 // ডেলিভারি চার্জ লোড
 async function loadDeliverySettings() {
   try {
-    const doc = await db.collection("settings").doc("delivery").get();
+    const doc = await db.collection("settings")
+      .doc("delivery")
+      .get();
 
     if (doc.exists) {
       deliverySettings = {
@@ -245,14 +277,17 @@ async function loadDeliverySettings() {
     }
 
     if ($("dhakaCharge")) {
-      $("dhakaCharge").value = deliverySettings.dhakaCharge;
+      $("dhakaCharge").value =
+        deliverySettings.dhakaCharge;
     }
 
     if ($("outsideCharge")) {
-      $("outsideCharge").value = deliverySettings.outsideCharge;
+      $("outsideCharge").value =
+        deliverySettings.outsideCharge;
     }
 
     updateTotal();
+
   } catch (error) {
     console.error(error);
   }
@@ -267,16 +302,22 @@ if ($("deliveryForm")) {
     const outsideCharge = Number($("outsideCharge").value);
 
     try {
-      await db.collection("settings").doc("delivery").set({
+      await db.collection("settings")
+        .doc("delivery")
+        .set({
+          dhakaCharge,
+          outsideCharge
+        });
+
+      deliverySettings = {
         dhakaCharge,
         outsideCharge
-      });
-
-      deliverySettings = { dhakaCharge, outsideCharge };
+      };
 
       updateTotal();
 
       alert("ডেলিভারি চার্জ সংরক্ষণ হয়েছে।");
+
     } catch (error) {
       alert("সংরক্ষণ করা যায়নি: " + error.message);
     }
@@ -311,7 +352,12 @@ function addWeightRow(weight = "", price = "") {
   removeButton.textContent = "বাদ";
   removeButton.onclick = () => row.remove();
 
-  row.append(weightInput, priceInput, removeButton);
+  row.append(
+    weightInput,
+    priceInput,
+    removeButton
+  );
+
   container.appendChild(row);
 }
 
@@ -346,7 +392,11 @@ if ($("productForm")) {
     const weights = weightNames.map((weight, index) => ({
       weight: weight.trim(),
       price: Number(prices[index])
-    })).filter(item => item.weight && Number.isFinite(item.price) && item.price >= 0);
+    })).filter(item =>
+      item.weight &&
+      Number.isFinite(item.price) &&
+      item.price >= 0
+    );
 
     if (!weights.length) {
       alert("কমপক্ষে একটি ওজন ও দাম যোগ করুন।");
@@ -358,18 +408,25 @@ if ($("productForm")) {
       description,
       imageUrl,
       weights,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      updatedAt:
+        firebase.firestore.FieldValue.serverTimestamp()
     };
 
     try {
       if (id) {
-        await db.collection("products").doc(id).update(productData);
+        await db.collection("products")
+          .doc(id)
+          .update(productData);
+
         alert("পণ্য আপডেট হয়েছে।");
+
       } else {
         productData.createdAt =
           firebase.firestore.FieldValue.serverTimestamp();
 
-        await db.collection("products").add(productData);
+        await db.collection("products")
+          .add(productData);
+
         alert("নতুন পণ্য যোগ হয়েছে।");
       }
 
@@ -381,6 +438,7 @@ if ($("productForm")) {
       }
 
       await loadProducts();
+
     } catch (error) {
       alert("পণ্য সংরক্ষণ করা যায়নি: " + error.message);
     }
@@ -394,12 +452,15 @@ function editP(id) {
   if (!product) return;
 
   const form = $("productForm");
+
   if (!form) return;
 
   form.elements.id.value = product.id;
   form.elements.name.value = product.name || "";
-  form.elements.description.value = product.description || "";
-  form.elements.imageUrl.value = product.imageUrl || "";
+  form.elements.description.value =
+    product.description || "";
+  form.elements.imageUrl.value =
+    product.imageUrl || "";
 
   $("weightRows").innerHTML = "";
 
@@ -413,7 +474,9 @@ function editP(id) {
     addWeightRow();
   }
 
-  form.scrollIntoView({ behavior: "smooth" });
+  form.scrollIntoView({
+    behavior: "smooth"
+  });
 }
 
 // অ্যাডমিন পণ্যের তালিকা
@@ -436,8 +499,14 @@ function adminProducts() {
     row.innerHTML = `
       <h3>${product.name || ""}</h3>
       <p>${priceText}</p>
-      <button onclick="editP('${product.id}')">এডিট</button>
-      <button onclick="deleteP('${product.id}')">ডিলিট</button>
+
+      <button onclick="editP('${product.id}')">
+        এডিট
+      </button>
+
+      <button onclick="deleteP('${product.id}')">
+        ডিলিট
+      </button>
     `;
 
     container.appendChild(row);
@@ -451,12 +520,19 @@ async function deleteP(id) {
     return;
   }
 
-  if (!confirm("এই পণ্যটি ডিলিট করতে চান?")) return;
+  if (!confirm("এই পণ্যটি ডিলিট করতে চান?")) {
+    return;
+  }
 
   try {
-    await db.collection("products").doc(id).delete();
+    await db.collection("products")
+      .doc(id)
+      .delete();
+
     await loadProducts();
+
     alert("পণ্য ডিলিট হয়েছে।");
+
   } catch (error) {
     alert("ডিলিট করা যায়নি: " + error.message);
   }
@@ -498,7 +574,8 @@ if ($("orderForm")) {
       total: subtotal + deliveryCharge,
       paymentMethod: "Cash on Delivery",
       status: "নতুন অর্ডার",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt:
+        firebase.firestore.FieldValue.serverTimestamp()
     };
 
     try {
@@ -508,8 +585,10 @@ if ($("orderForm")) {
 
       cart = [];
       renderCart();
+
       form.reset();
       updateTotal();
+
     } catch (error) {
       alert("অর্ডার করা যায়নি: " + error.message);
     }
@@ -518,7 +597,8 @@ if ($("orderForm")) {
 
 // অ্যাডমিন অর্ডার দেখানো
 async function loadOrders() {
-  const container = $("ordersList") || $("adminOrders");
+  const container =
+    $("ordersList") || $("adminOrders");
 
   if (!container) return;
 
@@ -549,9 +629,11 @@ async function loadOrders() {
         <p>মোট বিল: ${cash(order.total)}</p>
         <p>পেমেন্ট: ক্যাশ অন ডেলিভারি</p>
         <p>অবস্থা: ${order.status || "নতুন অর্ডার"}</p>
+
         <button onclick="updateOrderStatus('${doc.id}', 'প্রসেসিং')">
           প্রসেসিং
         </button>
+
         <button onclick="updateOrderStatus('${doc.id}', 'ডেলিভারি সম্পন্ন')">
           ডেলিভারি সম্পন্ন
         </button>
@@ -559,6 +641,7 @@ async function loadOrders() {
 
       container.appendChild(row);
     });
+
   } catch (error) {
     console.error(error);
     alert("অর্ডার লোড করা যায়নি: " + error.message);
@@ -573,9 +656,14 @@ async function updateOrderStatus(id, status) {
   }
 
   try {
-    await db.collection("orders").doc(id).update({ status });
+    await db.collection("orders")
+      .doc(id)
+      .update({ status });
+
     await loadOrders();
+
     alert("অর্ডারের অবস্থা আপডেট হয়েছে।");
+
   } catch (error) {
     alert("আপডেট করা যায়নি: " + error.message);
   }
@@ -586,12 +674,17 @@ if ($("loginForm")) {
   $("loginForm").addEventListener("submit", async event => {
     event.preventDefault();
 
-    const email = $("loginEmail")?.value;
-    const password = $("loginPassword")?.value;
+    const email = $("loginEmail").value;
+    const password = $("loginPassword").value;
 
     try {
-      await auth.signInWithEmailAndPassword(email, password);
+      await auth.signInWithEmailAndPassword(
+        email,
+        password
+      );
+
       alert("লগইন সফল হয়েছে।");
+
     } catch (error) {
       alert("লগইন হয়নি: " + error.message);
     }
@@ -611,11 +704,13 @@ auth.onAuthStateChanged(async currentUser => {
   const loginArea = $("loginArea");
 
   if (adminPanel) {
-    adminPanel.style.display = user ? "block" : "none";
+    adminPanel.style.display =
+      user ? "block" : "none";
   }
 
   if (loginArea) {
-    loginArea.style.display = user ? "none" : "block";
+    loginArea.style.display =
+      user ? "none" : "block";
   }
 
   if (user) {
@@ -630,4 +725,4 @@ loadDeliverySettings();
 
 if ($("weightRows") && !$("weightRows").children.length) {
   addWeightRow();
-  }
+}
