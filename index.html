@@ -108,6 +108,21 @@
       padding: 20px;
       margin-top: 25px;
     }
+
+    @media (max-width: 480px) {
+      section {
+        margin: 12px;
+        padding: 14px;
+      }
+
+      .weight-row {
+        flex-wrap: wrap;
+      }
+
+      .weight-row input {
+        width: 40%;
+      }
+    }
   </style>
 </head>
 
@@ -175,8 +190,8 @@
     </select>
 
     <div class="total-box">
-      <p>পণ্যের দাম: <strong id="subtotal">৳০</strong></p>
-      <p>ডেলিভারি চার্জ: <strong id="deliveryFee">৳০</strong></p>
+      <p>পণ্যের দাম: <strong id="orderSubtotal">৳০</strong></p>
+      <p>ডেলিভারি চার্জ: <strong id="orderDeliveryFee">৳০</strong></p>
       <h3>মোট বিল: <strong id="grandTotal">৳০</strong></h3>
     </div>
 
